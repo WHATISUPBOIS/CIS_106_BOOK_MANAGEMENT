@@ -41,24 +41,24 @@ public class BookManagementService
     /// Call book related methods or exit the program depending on user input.
     /// </summary>
     /// <param name="input">The user's input.</param>
-    // TODO: validate user input and make this use enums... somehow
     private void ParseUserInput(string input)
     {
-        switch(input)
+        Enum.TryParse(input, out ValidInputs parsedInput);
+        switch(parsedInput)
         {
-            case "1":
+            case ValidInputs.DISPLAY_ALL_BOOKS:
                 DisplayAllBooks();
                 break;
-            case "2":
+            case ValidInputs.DISPLAY_BOOK_BY_ID:
                 DisplayBookByID();
                 break;
-            case "3":
+            case ValidInputs.ADD_BOOK:
                 AddBook();
                 break;
-            case "4":
+            case ValidInputs.REMOVE_BOOK:
                 RemoveBook();
                 break;
-            case "5":
+            case ValidInputs.EXIT:
                 Environment.Exit(0);
                 break;
             default:
@@ -95,6 +95,7 @@ public class BookManagementService
     /// <summary>
     /// Calls DisplayBook using the user's input as book ID.
     /// </summary>
+    /// TODO: validate user input!
     private void DisplayBookByID()
     {
         Console.WriteLine("What is the ID of the book you'd like to look up?");
@@ -107,14 +108,14 @@ public class BookManagementService
     /// </summary>
     private void AddBook()
     {
-        Console.WriteLine("Book ID:");
-        string idInput = InputNotNull();
+        Console.WriteLine("Book ID (must be unique):");
+        string idInput = ValidateInputID();
         Console.WriteLine("Book Title:");
-        string titleInput = InputNotNull();
+        string titleInput = ValidateInput();
         Console.WriteLine("Book Author:");
-        string authorInput = InputNotNull();
+        string authorInput = ValidateInput();
         Console.WriteLine("Book Genre:");
-        string genreInput = InputNotNull();
+        string genreInput = ValidateInput();
 
         BookCollection.Add(idInput, new Book(titleInput, authorInput, genreInput, idInput));
     }
@@ -122,10 +123,11 @@ public class BookManagementService
     /// <summary>
     /// Removes a book from BookCollection using the user's input as book ID.
     /// </summary>
+    /// TODO: validate user input!
     private void RemoveBook()
     {
         Console.WriteLine("Which book would you like to delete?");
-        string idToRemove = InputNotNull();
+        string idToRemove = ValidateInput();
         Console.WriteLine($"{BookCollection[idToRemove].Title} REMOVED");
         BookCollection.Remove(idToRemove);
 
@@ -135,13 +137,45 @@ public class BookManagementService
     /// Simple method that loops until the user's input is not null.
     /// </summary>
     /// <returns>User's input. Never null.</returns>
-    private string InputNotNull()
+    private string ValidateInput()
     {
-        string userInput;
-        do
+        string userInput = Console.ReadLine();
+        
+        while(userInput == "")
         {
+            Console.WriteLine("User input is null. Try again.");
             userInput = Console.ReadLine();
-        } while(userInput == "");
+        };
         return userInput;
+    }
+
+
+    private string ValidateInputID()
+    {
+        string InputID = ValidateInput();
+        bool isIDDuplicate = false;
+
+        foreach(KeyValuePair<string, Book> book in BookCollection)
+        {
+            if(book.Key == InputID)
+            {
+                isIDDuplicate = true;
+            }
+        }
+        while (isIDDuplicate)
+        {
+            isIDDuplicate = false;
+            Console.WriteLine($"Book with ID {InputID} already exists. Please enter a unique ID.");
+            InputID = ValidateInput();
+            // Gross. I really need to find a better way to do this.
+            foreach(KeyValuePair<string, Book> book in BookCollection)
+            {
+                if(book.Key == InputID)
+                {
+                    isIDDuplicate = true;
+                }
+            }
+        }
+        return InputID;
     }
 }
