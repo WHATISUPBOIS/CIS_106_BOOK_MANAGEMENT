@@ -16,7 +16,8 @@ public class BookManagementService
     /// </summary>
     public void OnStart()
     {
-        Console.WriteLine($"Welcome to the book management system. You currently have {BookCollection.Count()} books in your system.");
+        // The next Console.WriteLine will print on the same line.
+        Console.Write("Welcome to the book management system. ");
         do
         {
             PromptUser();
@@ -28,6 +29,7 @@ public class BookManagementService
     /// </summary>
     private void PromptUser()
     {
+        Console.WriteLine($"You currently have {BookCollection.Count} books in your system.");
         Console.WriteLine("What would you like to do?");
         Console.WriteLine("1. Display Books");
         Console.WriteLine("2. Display Book by Book ID");
@@ -62,7 +64,7 @@ public class BookManagementService
                 Environment.Exit(0);
                 break;
             default:
-                Console.WriteLine("Input is invalid. Try again.");
+                Console.WriteLine("Input is invalid. Type a number between 1 and 5.");
                 break;
         }
     }
@@ -93,14 +95,70 @@ public class BookManagementService
     }
 
     /// <summary>
+    /// Takes in user input. Loops until the user's input is not null, empty, or whitespace.
+    /// </summary>
+    /// <returns>User's input. Never null.</returns>
+    private string ValidateInputNotEmpty()
+    {
+        string userInput;
+        do
+        {
+            userInput = Console.ReadLine();
+            if(string.IsNullOrWhiteSpace(userInput))
+            {
+                Console.WriteLine("User input is null or empty. Try again.");
+            }
+        } while(string.IsNullOrWhiteSpace(userInput));
+        return userInput;
+    }
+
+    /// <summary>
+    /// Checks if user input matches the ID of an existing book.
+    /// </summary>
+    /// <returns>An empty string if user input doesn't match a book's ID. Returns user input otherwise.</returns>
+    private string ValidateInputMatchID()
+    {
+        string inputID;
+        inputID = ValidateInputNotEmpty();
+
+        if (!BookCollection.ContainsKey(inputID))
+        {
+            Console.WriteLine($"There is no book with ID {inputID}. Type 1 to see all valid book IDs.");
+            return "";
+        }
+        return inputID;
+    }
+
+    /// <summary>
     /// Calls DisplayBook using the user's input as book ID.
     /// </summary>
-    /// TODO: validate user input!
     private void DisplayBookByID()
     {
         Console.WriteLine("What is the ID of the book you'd like to look up?");
-        string inputID = Console.ReadLine();
-        DisplayBook(BookCollection[inputID]);
+        string inputID = ValidateInputMatchID();
+        // ValidateInputMatchID can only return "" if the user's input doesn't match a book ID.
+        if(inputID != "")
+        {
+            DisplayBook(BookCollection[inputID]);
+        }
+    }
+
+    /// <summary>
+    /// Takes in user input. Loops until user input doesn't match an existing book ID.
+    /// </summary>
+    /// <returns>User input. Will never match an existing book ID.</returns>
+    private string ValidateInputNotMatchID()
+    {
+        string inputID;
+        do
+        {
+            inputID = ValidateInputNotEmpty();
+            if (BookCollection.ContainsKey(inputID))
+            {
+                Console.WriteLine($"Book with ID {inputID} already exists. Please enter a unique ID.");
+            }
+        } while (BookCollection.ContainsKey(inputID));
+        return inputID;
     }
 
     /// <summary>
@@ -109,73 +167,28 @@ public class BookManagementService
     private void AddBook()
     {
         Console.WriteLine("Book ID (must be unique):");
-        string idInput = ValidateInputID();
+        string idInput = ValidateInputNotMatchID();
         Console.WriteLine("Book Title:");
-        string titleInput = ValidateInput();
+        string titleInput = ValidateInputNotEmpty();
         Console.WriteLine("Book Author:");
-        string authorInput = ValidateInput();
+        string authorInput = ValidateInputNotEmpty();
         Console.WriteLine("Book Genre:");
-        string genreInput = ValidateInput();
+        string genreInput = ValidateInputNotEmpty();
 
         BookCollection.Add(idInput, new Book(titleInput, authorInput, genreInput, idInput));
     }
-
+    
     /// <summary>
     /// Removes a book from BookCollection using the user's input as book ID.
     /// </summary>
-    /// TODO: validate user input!
     private void RemoveBook()
     {
         Console.WriteLine("Which book would you like to delete?");
-        string idToRemove = ValidateInput();
-        Console.WriteLine($"{BookCollection[idToRemove].Title} REMOVED");
-        BookCollection.Remove(idToRemove);
-
-    }
-
-    /// <summary>
-    /// Simple method that loops until the user's input is not null.
-    /// </summary>
-    /// <returns>User's input. Never null.</returns>
-    private string ValidateInput()
-    {
-        string userInput = Console.ReadLine();
-        
-        while(userInput == "")
+        string idToRemove = ValidateInputMatchID();
+        if(idToRemove != "")
         {
-            Console.WriteLine("User input is null. Try again.");
-            userInput = Console.ReadLine();
-        };
-        return userInput;
-    }
-
-
-    private string ValidateInputID()
-    {
-        string InputID = ValidateInput();
-        bool isIDDuplicate = false;
-
-        foreach(KeyValuePair<string, Book> book in BookCollection)
-        {
-            if(book.Key == InputID)
-            {
-                isIDDuplicate = true;
-            }
+            Console.WriteLine($"{BookCollection[idToRemove].Title} REMOVED");
+            BookCollection.Remove(idToRemove);
         }
-        while (isIDDuplicate)
-        {
-            isIDDuplicate = false;
-            Console.WriteLine($"Book with ID {InputID} already exists. Please enter a unique ID.");
-            InputID = ValidateInput();
-            // Gross. I really need to find a better way to do this.
-            foreach(KeyValuePair<string, Book> book in BookCollection)
-            {
-                if(book.Key == InputID)
-                {
-                    isIDDuplicate = true;
-                }
-            }
-        }
-        return InputID;
     }
 }
